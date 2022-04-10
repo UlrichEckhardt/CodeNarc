@@ -62,7 +62,8 @@ class CodeNarcTest extends AbstractTestCase {
 
     private CodeNarc codeNarc
     private File outputFile
-    private int exitCode
+    // If systemExit() was called, this holds the exit code, otherwise `nil`.
+    private Integer exitCode
 
     private final Map numViolations = [:].withDefault { 0 }
     private final Results results = [
@@ -272,27 +273,39 @@ class CodeNarcTest extends AbstractTestCase {
     class CheckMaxViolations {
 
         @Test
-        void ActualLessThanOrEqualToMax() {
+        void Priority1LessThanOrEqualToMax() {
             codeNarc.checkMaxViolations(results, P1, 1)
-            assert exitCode == 0
-
-            codeNarc.checkMaxViolations(results, P2, 0)
-            assert exitCode == 0
-
-            codeNarc.checkMaxViolations(results, P3, 0)
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
-        void ActualExceedsMax() {
+        void Priority2LessThanOrEqualToMax() {
+            codeNarc.checkMaxViolations(results, P2, 0)
+            assert exitCode == null
+        }
+
+        @Test
+        void Priority3LessThanOrEqualToMax() {
+            codeNarc.checkMaxViolations(results, P3, 0)
+            assert exitCode == null
+        }
+
+        @Test
+        void Priority1ExceedsMax() {
             numViolations[P1] = 2
             codeNarc.checkMaxViolations(results, P1, 1)
             assert exitCode == 1
+        }
 
+        @Test
+        void Priority2ExceedsMax() {
             numViolations[P2] = 2
             codeNarc.checkMaxViolations(results, P2, 1)
             assert exitCode == 1
+        }
 
+        @Test
+        void Priority3ExceedsMax() {
             numViolations[P3] = 2
             codeNarc.checkMaxViolations(results, P3, 1)
             assert exitCode == 1
@@ -328,7 +341,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert codeNarcRunner.reportWriters.size == 1
             def reportWriter = codeNarcRunner.reportWriters[0]
             assertReport(reportWriter, HtmlReportWriter, HTML_REPORT_FILE, TITLE)
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -381,7 +394,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert codeNarcRunner.reportWriters.size == 1
             def reportWriter = codeNarcRunner.reportWriters[0]
             assertReport(reportWriter, HtmlReportWriter, null, null)
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -407,7 +420,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert codeNarcRunner.reportWriters.size == 1
             def reportWriter = codeNarcRunner.reportWriters[0]
             assertReport(reportWriter, HtmlReportWriter, HTML_REPORT_FILE, TITLE)
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -435,7 +448,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert codeNarcRunner.reportWriters.size == 1
             def reportWriter = codeNarcRunner.reportWriters[0]
             assertReport(reportWriter, HtmlReportWriter, HTML_REPORT_FILE, TITLE)
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -501,7 +514,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert codeNarcRunner.reportWriters.size == 1
             def reportWriter = codeNarcRunner.reportWriters[0]
             assert reportWriter.class == NoTitleReportWriter
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -514,7 +527,7 @@ class CodeNarcTest extends AbstractTestCase {
             def reportWriter = codeNarcRunner.reportWriters[0]
             assert reportWriter.class == XmlReportWriter
             assert reportWriter.writeToStandardOut
-            assert exitCode == 0
+            assert exitCode == null
         }
 
     }
@@ -529,7 +542,7 @@ class CodeNarcTest extends AbstractTestCase {
                     "-title=$TITLE", "-excludes=$EXCLUDES", "-rulesetfiles=$RULESET1"] as String[]
             CodeNarc.main(ARGS)
             assert outputFile.exists()
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -542,7 +555,7 @@ class CodeNarcTest extends AbstractTestCase {
             assert !stdout.contains('ERROR')
             assert stdout.contains(CodeNarc.HELP)
             assert !outputFile.exists()
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -557,7 +570,7 @@ class CodeNarcTest extends AbstractTestCase {
             def expectedVersion = "CodeNarc version $version"
             assert stdout.contains(expectedVersion), "$expectedVersion not found in $stdout"
             assert !outputFile.exists()
-            assert exitCode == 0
+            assert exitCode == null
         }
 
         @Test
@@ -595,7 +608,12 @@ class CodeNarcTest extends AbstractTestCase {
     @BeforeEach
     void setUp() {
         codeNarc = new CodeNarc()
-        codeNarc.systemExit = { code -> exitCode = code }
+        exitCode = null
+        codeNarc.systemExit = { code ->
+            assert (code >= 0) && (code <= 255)
+            assert exitCode == null
+            exitCode = code
+        }
         codeNarc.createCodeNarcRunner = { codeNarcRunner }
         outputFile = new File(HTML_REPORT_FILE)
     }
