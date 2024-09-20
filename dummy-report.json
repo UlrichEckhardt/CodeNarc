@@ -1,0 +1,26 @@
+[
+    {
+        "description": "Class 'SampleFile' is empty (has no methods, fields or properties). Why would you need a class like this?",
+        "check_name": "EmptyClass",
+        "fingerprint": "37e50585a6afe0d042752030ed92b20febe9e622",
+        "severity": 2,
+        "location": {
+            "path": "src/test/resources/SampleFile.groovy",
+            "lines": {
+                "begin": 1
+            }
+        }
+    },
+    {
+        "description": "Class 'Subdir2File1' is empty (has no methods, fields or properties). Why would you need a class like this?",
+        "check_name": "EmptyClass",
+        "fingerprint": "f60f718e9fbda7ad884f3f067e76e8a955362e93",
+        "severity": 2,
+        "location": {
+            "path": "build/resources/test/sourcewithdirs/subdir2/Subdir2File1.groovy",
+            "lines": {
+                "begin": 23
+            }
+        }
+    }
+]
